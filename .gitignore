@@ -1,0 +1,8 @@
+/target
+/project/target
+/project/.sbtserver
+/project/.sbtserver.lock
+/project/project
+/project/target
+/RUNNING_PID
+/.sbtserver
