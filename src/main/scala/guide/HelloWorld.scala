@@ -1,5 +1,6 @@
 package guide
 
+/** Basic introduction to trees via runtime reflection and the toolbox compiler */
 object HelloWorld {
 
    def main(args: Array[String]){
