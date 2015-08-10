@@ -7,7 +7,7 @@ object Typer {
     val global = newGlobal()
     import global._
     val typer = new Typer[global.type](global)
-    p(typer.typed(q"1 : String"))
+    p(typer.typed(q"1"))
 //    p(typer.typed(q"1 : Int"))
 //    p(typer.typed(q"1.toInt : Int"))
 //    p(typer.typed( q"""_root_.scala.Some[String]("") : Option[String] """))
@@ -31,7 +31,7 @@ class Typer[G <: Global](val g: G) {
     p(msg)
     indent += 1
     val result = try body finally indent -= 1
-    p("=> " + show(result).replaceAll("{\n", "{ ").replaceAll("\n", "; ").take(60))
+    p("=> " + show(result).replaceAll("""\{\n"""", "{ ").replaceAll("\n", "; ").take(60))
     result
   }
 
