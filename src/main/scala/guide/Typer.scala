@@ -17,24 +17,24 @@ object Typer {
 
 class Typer[G <: Global](val g: G) {
   import g._
-  private def error(t: Tree) = ErrorType
-
-  private var indent = 0
-  private val debug = false
-  private def trace[A](msg: String)(body: => A) = {
-    def p(msg: String) = if (debug) println((" " * 4 * indent) + msg)
-    p(msg)
-    indent += 1
-    val result = try body finally indent -= 1
-    p("=> " + showRaw(result).replaceAll("\n", "; ").take(60))
-    result
-  }
-
   case class State()
-
   def typed(t: Tree, state: State = new State()): Type = trace(s"typeOf($t)")(
     t match {
       case _ => error(t)
     }
   )
+
+  var indent = 0
+  val debug = false
+  def trace(msg: String)(body: => Type): Type = {
+    def p(msg: String) = if (debug) println((" " * 4 * indent) + msg)
+    p(msg)
+    indent += 1
+    val result = try body finally indent -= 1
+    p("=> " + show(result).replaceAll("{\n", "{ ").replaceAll("\n", "; ").take(60))
+    result
+  }
+
+  private def error(t: Tree) = ErrorType
+
 }
