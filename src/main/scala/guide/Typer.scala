@@ -7,7 +7,7 @@ object Typer {
     val global = newGlobal()
     import global._
     val typer = new Typer[global.type](global)
-//    p(typer.typed(q"1"))
+    p(typer.typed(q"1"))
     p(typer.typed(q""" "bob": Int"""))
     p(typer.typed(q"1.toInt : Int"))
     p(typer.typed(q"(null : Some[String]).get : String"))
@@ -34,7 +34,7 @@ class Typer[G <: Global](val g: G) {
         qual1.member(name) match {
           case NoSymbol => error(t)
           case member =>
-            member.info // TODO generic substitution
+            qual1.memberType(member)
         }
       case Typed(expr, tpt) =>
         val expr1 = typed1(expr)
@@ -47,6 +47,15 @@ class Typer[G <: Global](val g: G) {
         val context = analyzer.newTyper(analyzer.rootContext(NoCompilationUnit)).context
         val lookup = context.lookupSymbol(name, _ => true)
         lookup.symbol.tpeHK
+      case AppliedTypeTree(tpt, args) =>
+        val tpt1 = typed1(tpt)
+        val args1 = args map typed1
+        if (tpt1.isError || args1.exists(_.isError)) error(t)
+        else {
+          val tparams = tpt1.typeParams
+          if (tparams.length != args.length) error(t)
+          else tpt1.instantiateTypeParams(tparams, args1)
+        }
       case _ => notImplemented(t)
     }
     state.adapt(result)
