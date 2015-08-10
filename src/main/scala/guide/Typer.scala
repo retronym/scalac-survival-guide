@@ -7,10 +7,10 @@ object Typer {
     val global = newGlobal()
     import global._
     val typer = new Typer[global.type](global)
-    p(typer.typed(q"1"))
-    p(typer.typed(q""" "bob": Int"""))
-//    p(typer.typed(q"1 : Int"))
-//    p(typer.typed(q"1.toInt : Int"))
+//    p(typer.typed(q"1"))
+//    p(typer.typed(q""" "bob": Int"""))
+    p(typer.typed(q"1.toInt : Int"))
+    //    p(typer.typed(q"1 : Int"))
 //    p(typer.typed( q"""_root_.scala.Some[String]("") : Option[String] """))
 //    p(typer.typed( q"""_root_.scala.Some("") : Option[String] """))
   }
@@ -18,10 +18,23 @@ object Typer {
 
 class Typer[G <: Global](val g: G) {
   import g._
-  case class State()
+  case class State(exprMode: Boolean = true) {
+    def inExprMode = copy(exprMode = true)
+    def adapt(tp: Type) = tp match {
+      case NullaryMethodType(result) if exprMode => result
+      case tp => tp
+    }
+  }
   def typed(t: Tree, state: State = new State()): Type = trace(s"typeOf($t)") {
     def typed1(tree: Tree) = typed(tree, state)
-    t match {
+    val result = t match {
+      case Select(qual, name) =>
+        val qual1 = typed1(qual)
+        qual1.member(name) match {
+          case NoSymbol => error(t)
+          case member =>
+            member.info // TODO generic substitution
+        }
       case Typed(expr, tpt) =>
         val expr1 = typed1(expr)
         val tpt1 = typed1(tpt)
@@ -35,6 +48,7 @@ class Typer[G <: Global](val g: G) {
       }
       case _ => notImplemented(t)
     }
+    state.adapt(result)
   }
 
   var indent = 0
