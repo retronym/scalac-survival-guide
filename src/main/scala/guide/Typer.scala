@@ -8,6 +8,7 @@ object Typer {
     import global._
     val typer = new Typer[global.type](global)
     p(typer.typed(q"1"))
+    p(typer.typed(q""" "bob": Int"""))
 //    p(typer.typed(q"1 : Int"))
 //    p(typer.typed(q"1.toInt : Int"))
 //    p(typer.typed( q"""_root_.scala.Some[String]("") : Option[String] """))
@@ -18,12 +19,23 @@ object Typer {
 class Typer[G <: Global](val g: G) {
   import g._
   case class State()
-  def typed(t: Tree, state: State = new State()): Type = trace(s"typeOf($t)")(
+  def typed(t: Tree, state: State = new State()): Type = trace(s"typeOf($t)") {
+    def typed1(tree: Tree) = typed(tree, state)
     t match {
+      case Typed(expr, tpt) =>
+        val expr1 = typed1(expr)
+        val tpt1 = typed1(tpt)
+        if (expr1.isError) expr1
+        else if (expr1 <:< tpt1) tpt1
+        else error(t)
       case Literal(c : Constant) => c.tpe
+      case Ident(name) => name match {
+        case tpnme.Int => definitions.IntTpe
+        case _ => notImplemented(t)
+      }
       case _ => notImplemented(t)
     }
-  )
+  }
 
   var indent = 0
   val debug = false
