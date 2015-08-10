@@ -20,7 +20,7 @@ class Typer[G <: Global](val g: G) {
   case class State()
   def typed(t: Tree, state: State = new State()): Type = trace(s"typeOf($t)")(
     t match {
-      case _ => error(t)
+      case _ => notImplemented(t)
     }
   )
 
@@ -36,5 +36,6 @@ class Typer[G <: Global](val g: G) {
   }
 
   private def error(t: Tree) = ErrorType
-
+  private def notImplemented(t: Tree) =
+    sys.error(s"Typechecking of ${t.productPrefix} not implemented. ${showRaw(t)}")
 }
