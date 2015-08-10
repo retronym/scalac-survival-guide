@@ -20,6 +20,7 @@ class Typer[G <: Global](val g: G) {
   case class State()
   def typed(t: Tree, state: State = new State()): Type = trace(s"typeOf($t)")(
     t match {
+      case Literal(c : Constant) => c.tpe
       case _ => notImplemented(t)
     }
   )
