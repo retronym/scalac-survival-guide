@@ -8,8 +8,9 @@ object Typer {
     import global._
     val typer = new Typer[global.type](global)
 //    p(typer.typed(q"1"))
-//    p(typer.typed(q""" "bob": Int"""))
+    p(typer.typed(q""" "bob": Int"""))
     p(typer.typed(q"1.toInt : Int"))
+    p(typer.typed(q"(null : Some[String]).get : String"))
     //    p(typer.typed(q"1 : Int"))
 //    p(typer.typed( q"""_root_.scala.Some[String]("") : Option[String] """))
 //    p(typer.typed( q"""_root_.scala.Some("") : Option[String] """))
@@ -42,10 +43,10 @@ class Typer[G <: Global](val g: G) {
         else if (expr1 <:< tpt1) tpt1
         else error(t)
       case Literal(c : Constant) => c.tpe
-      case Ident(name) => name match {
-        case tpnme.Int => definitions.IntTpe
-        case _ => notImplemented(t)
-      }
+      case Ident(name) =>
+        val context = analyzer.newTyper(analyzer.rootContext(NoCompilationUnit)).context
+        val lookup = context.lookupSymbol(name, _ => true)
+        lookup.symbol.tpeHK
       case _ => notImplemented(t)
     }
     state.adapt(result)
