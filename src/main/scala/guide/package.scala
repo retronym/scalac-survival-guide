@@ -15,7 +15,14 @@ package object guide {
     "\n" + ("=" * l) + " " + s + " " + ("=" * r) + "\n"
   }
 
-  def p(a: Any) = println(a)
+  var lastWasComment = false
+  def p(a: Any) = {
+    val msg = a.toString
+    val isComment = msg.startsWith("// ")
+    if (lastWasComment) println(msg)
+    else println("\n" + msg)
+    lastWasComment = isComment
+  }
 
   def newGlobal(options: String = ""): Global = {
     val reporter = new StoreReporter

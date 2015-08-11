@@ -2,22 +2,21 @@ package guide
 
 import scala.tools.nsc.Global
 
-object Typer {
-  def main(args: Array[String]) {
-    val global = newGlobal()
-    import global._
-    val typer = new Typer[global.type](global)
-    p(typer.typed(q"1"))
-    p(typer.typed(q""" "bob": Int"""))
-    p(typer.typed(q"1.toInt : Int"))
-    p(typer.typed(q"(null : Some[String]).get : String"))
-    //    p(typer.typed(q"1 : Int"))
-//    p(typer.typed( q"""_root_.scala.Some[String]("") : Option[String] """))
-//    p(typer.typed( q"""_root_.scala.Some("") : Option[String] """))
-  }
+object _07_Typer extends App {
+  val global = newGlobal()
+  import global._
+  val typer = new ToyTyper[global.type](global)
+  p(typer.typed(q"1"))
+  //    p(typer.typed(q""" "bob": Int"""))
+  //    p(typer.typed(q"1.toInt : Int"))
+  p(typer.typed(q"(null : Some.apply[String]).get : String"))
+  //    p(typer.typed(q"1 : Int"))
+  //    p(typer.typed( q"""_root_.scala.Some[String]("") : Option[String] """))
+  //    p(typer.typed( q"""_root_.scala.Some("") : Option[String] """))
 }
 
-class Typer[G <: Global](val g: G) {
+
+class ToyTyper[G <: Global](val g: G) {
   import g._
   case class State(exprMode: Boolean = true) {
     def inExprMode = copy(exprMode = true)

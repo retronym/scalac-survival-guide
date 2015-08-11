@@ -1,6 +1,6 @@
 package guide
 
-object Types {
+object _04_TypesAndSymbols extends App {
   val global = newGlobal()
   new global.Run
   import global._
@@ -15,12 +15,14 @@ object Types {
     p(rootMirror.getClassIfDefined("java.lang.String"))
     p("// Beware the null object NoSymbol")
     p(rootMirror.getClassIfDefined("java.lang.Twine"))
-    p("// We can also use a convenience method that lets us summon a Symbol based on a type argument")
+    p("// symbolOf: a convenience method that lets us summon a Symbol")
     p(symbolOf[java.lang.String])
     // p(symbolOf[java.lang.Twine]) compiler error
-    p("")
-    p("// After typechecking, Ident, Select, and Import trees hold the symbol of the entity they reference")
+    p("// RefTree: after typechecking, Ident, Select, and Import trees")
+    p("// hold the symbol of the entity they reference")
     p(result.tree.collect { case rt: RefTree => rt })
+    p("// After DefDef, ValDef, ClassDef, ModuleDef, PackageDef trees hold the symbol entity they define")
+    p(result.tree.collect { case rt: DefTree => (rt.productPrefix, rt.symbol.name) })
   }
   def types = {
     p("// like symbols, many common types are available in definitions")
@@ -35,10 +37,8 @@ object Types {
 
   }
 
-  def main(args: Array[String]) {
-    symbols
-    types
+  symbols
+  types
 
-
-  }
+  () => _05_Unshrouding
 }
