@@ -21,64 +21,14 @@ object _07_Typer extends App {
 
 class ToyTyper[G <: Global](val g: G) {
   import g._
-  case class State(exprMode: Boolean) {
-    def adapt(tp: Type) = tp match {
-      case NullaryMethodType(result) if exprMode => result
-      case tp => tp
-    }
-    def inExprMode = copy(exprMode = true)
+  case class State() {
+    def adapt(tp: Type) = tp
   }
-  def typed(t: Tree) = typedTree(t, new State(false))
+  def typed(t: Tree) = typedTree(t, new State())
   private def typedTrees(ts: List[Tree], state: State) = ts map (t => typedTree(t, state))
+
   private def typedTree(t: Tree, state: State): Type = {
     def result = t match {
-      case Select(qual, name) =>
-        val qual1 = typedTree(qual, state)
-        qual1.member(name) match {
-          case NoSymbol => error(t)
-          case member =>
-            qual1.memberType(member)
-        }
-      case Typed(expr, tpt) =>
-        val expr1 = typedTree(expr, state.inExprMode)
-        val tpt1 = typedTree(tpt, state)
-        if (expr1.isError) expr1
-        else if (expr1 <:< tpt1) tpt1
-        else error(t)
-      case TypeApply(fun, args) =>
-        val fun1 = typedTree(fun, state)
-        val args1 = typedTrees(args, state)
-        if (fun1.isError || args1.exists(_.isError)) error(t)
-        else {
-          val tparams = fun1.typeParams
-          if (tparams.length != args.length) error(t)
-          else {
-            fun1.resultType.instantiateTypeParams(tparams, args1)
-          }
-        }
-      case Apply(fun, args) =>
-        val fun1 = typedTree(fun, state)
-        val args1 = typedTrees(args, state)
-        if (fun1.isError || args1.exists(_.isError)) error(t)
-        else {
-          val params = fun1.params
-          if (params.length != args.length) error(t)
-          else {
-            if (!args1.corresponds(params)((a, p) => a <:< p.info)) error(t)
-            else fun1.resultType
-          }
-        }
-      case Literal(c : Constant) => c.tpe
-      case Ident(name) => lookupIdent(g)(name).tpeHK
-      case AppliedTypeTree(tpt, args) =>
-        val tpt1 = typedTree(tpt, state)
-        val args1 = args map (arg => typedTree(arg, state))
-        if (tpt1.isError || args1.exists(_.isError)) error(t)
-        else {
-          val tparams = tpt1.typeParams
-          if (tparams.length != args.length) error(t)
-          else tpt1.instantiateTypeParams(tparams, args1)
-        }
       case _ => notImplemented(t)
     }
     trace(s"typed($t, $state)") {
