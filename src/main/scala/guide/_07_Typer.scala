@@ -10,41 +10,43 @@ object _07_Typer extends App {
   val global = newGlobal()
   import global._
   val typer = new ToyTyper[global.type](global)
-  debug = true
-  p(typer.typed(q"1"))
-  p(typer.typed(q""" "bob": Int"""))
-  p(typer.typed(q"1.toInt : Int"))
-  p(typer.typed(q"(null : Some[String]).get : String"))
-  p(typer.typed(q"(Some.apply[String](null)).get : String"))
+  import typer.typed
+  debug = false
+  p(typed(q"1"))
+  p(typed(q""" "bob": Int"""))
+  p(typed(q"1.toInt : Int"))
+  p(typed(q"(null : Some[String]).get : String"))
+  p(typed(q"(Some.apply[String](null)).get : String"))
 }
 
 class ToyTyper[G <: Global](val g: G) {
   import g._
-  case class State(exprMode: Boolean = true, methodMode: Boolean = false) {
-    def inExprMode = copy(exprMode = true)
+  case class State(exprMode: Boolean) {
     def adapt(tp: Type) = tp match {
       case NullaryMethodType(result) if exprMode => result
       case tp => tp
     }
+    def inExprMode = copy(exprMode = true)
   }
-  def typedTrees(ts: List[Tree], state: State) = ts map (t => typed(t, state))
-  def typed(t: Tree, state: State = new State()): Type = trace(s"typed($t, $state)") {
-    val result = t match {
+  def typed(t: Tree) = typedTree(t, new State(false))
+  private def typedTrees(ts: List[Tree], state: State) = ts map (t => typedTree(t, state))
+  private def typedTree(t: Tree, state: State): Type = {
+    def result = t match {
       case Select(qual, name) =>
-        val qual1 = typed(qual, state)
+        val qual1 = typedTree(qual, state)
         qual1.member(name) match {
           case NoSymbol => error(t)
           case member =>
             qual1.memberType(member)
         }
       case Typed(expr, tpt) =>
-        val expr1 = typed(expr, state)
-        val tpt1 = typed(tpt, state)
+        val expr1 = typedTree(expr, state.inExprMode)
+        val tpt1 = typedTree(tpt, state)
         if (expr1.isError) expr1
         else if (expr1 <:< tpt1) tpt1
         else error(t)
       case TypeApply(fun, args) =>
-        val fun1 = typed(fun, state)
+        val fun1 = typedTree(fun, state)
         val args1 = typedTrees(args, state)
         if (fun1.isError || args1.exists(_.isError)) error(t)
         else {
@@ -55,7 +57,7 @@ class ToyTyper[G <: Global](val g: G) {
           }
         }
       case Apply(fun, args) =>
-        val fun1 = typed(fun, state)
+        val fun1 = typedTree(fun, state)
         val args1 = typedTrees(args, state)
         if (fun1.isError || args1.exists(_.isError)) error(t)
         else {
@@ -69,8 +71,8 @@ class ToyTyper[G <: Global](val g: G) {
       case Literal(c : Constant) => c.tpe
       case Ident(name) => lookupIdent(g)(name).tpeHK
       case AppliedTypeTree(tpt, args) =>
-        val tpt1 = typed(tpt, state)
-        val args1 = args map (arg => typed(arg, state))
+        val tpt1 = typedTree(tpt, state)
+        val args1 = args map (arg => typedTree(arg, state))
         if (tpt1.isError || args1.exists(_.isError)) error(t)
         else {
           val tparams = tpt1.typeParams
@@ -79,7 +81,9 @@ class ToyTyper[G <: Global](val g: G) {
         }
       case _ => notImplemented(t)
     }
-    state.adapt(result)
+    trace(s"typed($t, $state)") {
+      state.adapt(result)
+    }
   }
 
   private def error(t: Tree) = ErrorType
