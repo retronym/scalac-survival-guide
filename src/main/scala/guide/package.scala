@@ -46,5 +46,24 @@ package object guide {
     new CompileResult[global.type](global, global.reporter.hasErrors, tree, infos.toList)
   }
 
+  def lookupIdent(g: Global)(name: g.Name): g.Symbol = {
+    import g._
+    val context = analyzer.newTyper(analyzer.rootContext(NoCompilationUnit)).context
+    val lookup = context.lookupSymbol(name, _ => true)
+    lookup.symbol
+  }
+
   case class CompileResult[G <: Global](global: G, error: Boolean, tree: G#Tree, infos: List[StoreReporter#Info])
+
+  private var indent = 0
+  var debug = true
+  def trace[A](msg: String)(body: => A): A = {
+    def oneLine(s: String) = s.replaceAll("""\{\n"""", "{ ").replaceAll("\n", "; ")
+    def p(msg: String) = if (debug) println((" " * 4 * indent) + oneLine(msg))
+    p(msg)
+    indent += 1
+    val result = try body finally indent -= 1
+    p("=> " + result)
+    result
+  }
 }
