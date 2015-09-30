@@ -4,11 +4,13 @@ object _04_TypesAndSymbols extends App {
   val global = newGlobal()
   new global.Run
   import global._
+
   def symbols = {
     ===("Types, Symbols, too)")
     p("// All declarations / definitions give rise to a Symbol.")
-    val result = compile("class C { def foo = 42; def bar = foo }", global)
+    val result = compile("class C { def foo = 42; def bar(x: Int) = foo }", global)
     result.tree.collect { case dt: DefTree => p(dt.symbol.defString) }
+
     p("// A lot of common symbols are available in definitions")
     p(List(definitions.StringClass, definitions.IntClass, definitions.Any_toString, definitions.ArrayModule))
     p("// We can also look them up by a fully qualified name")
@@ -27,6 +29,7 @@ object _04_TypesAndSymbols extends App {
   def types = {
     p("// like symbols, many common types are available in definitions")
     p(definitions.IntTpe)
+    p(definitions.IntClass.tpeHK)
     p("// This is a TypeRef, which enapsulates a prefix, an symbol, and a list of type arguments")
     p(showRaw(definitions.IntTpe))
     definitions.init()

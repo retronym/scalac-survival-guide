@@ -32,7 +32,7 @@ object _06_Unshrouding extends App {
       | Typechecking proceeds as:
       |
       |  StringContext.apply("println(", ")") // insert apply call
-      |  Quasiquote(StringContext.apply(..).q // implicit conversion to find extension method
+      |  Quasiquote(StringContext.apply(..)).q // implicit conversion to find extension method
       |  .SyntacticApplied.apply(...)         // macro expansion
       |
     """.stripMargin)

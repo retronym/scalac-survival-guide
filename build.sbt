@@ -4,6 +4,8 @@ version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
+scalacOptions in Compile += "-language:_"
+
 libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
 
 libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value

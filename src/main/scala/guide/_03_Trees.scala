@@ -1,6 +1,6 @@
 package guide
 
-object _03_Trees {
+object _03_Trees extends App {
   val cm = scala.reflect.runtime.currentMirror
 
   import cm.universe._
@@ -13,6 +13,7 @@ object _03_Trees {
   p("// We can also parse source code into a tree")
   def parsedTree = toolbox.parse( """println("hello parser")""")
   toolbox.eval(parsedTree)
+
   def quotedTree: Tree = q"""println("hello quasiquote")"""
   toolbox.eval(quotedTree)
 
@@ -34,6 +35,7 @@ object _03_Trees {
   val printlns = typeOf[Predef.type].member(TermName("println")).alternatives
   assert(printlns.length == 2, printlns)
   val hasPrintln = typed.exists {
+//    case Apply(qual, _) =>
     case q"$qual(...$args)" =>
       printlns contains qual.symbol
     case _ => false

@@ -1,3 +1,4 @@
+import scala.annotation.elidable
 import scala.tools.nsc.{Global, Settings}
 import scala.tools.nsc.reporters.StoreReporter
 
@@ -32,6 +33,16 @@ package object guide {
     new g.Run
     g
   }
+  def newInteractiveGlobal(options: String = ""): scala.tools.nsc.interactive.Global = {
+    val reporter = new StoreReporter
+    val settings = new Settings()
+    settings.processArgumentString("-usejavacp " + options)
+    val g = new scala.tools.nsc.interactive.Global(settings, reporter) {
+      override def assertCorrectThread(): Unit = ()
+    }
+    new g.TyperRun
+    g
+  }
   def compile(code: String, global: Global = newGlobal()): CompileResult[global.type] = {
     val run = new global.Run
     global.reporter.reset()
@@ -53,7 +64,9 @@ package object guide {
     lookup.symbol
   }
 
-  case class CompileResult[G <: Global](global: G, error: Boolean, tree: G#Tree, infos: List[StoreReporter#Info])
+  case class CompileResult[G <: Global](global: G, error: Boolean, tree: G#Tree, infos: List[StoreReporter#Info]) {
+    def assertNoErrors(): this.type = {assert(!error, infos.toList); this}
+  }
 
   private var indent = 0
   var debug = true
