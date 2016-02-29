@@ -1,6 +1,9 @@
 import scala.annotation.elidable
+import scala.reflect.internal.util.ScalaClassLoader
 import scala.tools.nsc.{Phase, SubComponent, Global, Settings}
 import scala.tools.nsc.reporters.StoreReporter
+import scala.tools.reflect.ReflectMain._
+import scala.tools.util.PathResolverFactory
 
 package object guide {
   val Width = 80
@@ -84,6 +87,10 @@ package object guide {
 
   case class CompileResult[G <: Global](global: G, error: Boolean, tree: G#Tree, infos: List[StoreReporter#Info]) {
     def assertNoErrors(): this.type = {assert(!error, infos.toList); this}
+    def classLoader: ClassLoader = {
+      val classPathURLs = PathResolverFactory.create(global.settings).resultAsURLs
+      ScalaClassLoader.fromURLs(classPathURLs, getClass.getClassLoader)
+    }
   }
 
   private var indent = 0
