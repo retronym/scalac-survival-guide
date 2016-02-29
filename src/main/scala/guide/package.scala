@@ -1,5 +1,5 @@
 import scala.annotation.elidable
-import scala.tools.nsc.{Global, Settings}
+import scala.tools.nsc.{Phase, SubComponent, Global, Settings}
 import scala.tools.nsc.reporters.StoreReporter
 
 package object guide {
@@ -25,11 +25,14 @@ package object guide {
     lastWasComment = isComment
   }
 
-  def newGlobal(options: String = ""): Global = {
+  def newGlobal(options: String = "", extraPhases: Global => List[(SubComponent, String)] = _ => Nil): Global = {
     val reporter = new StoreReporter
     val settings = new Settings()
     settings.processArgumentString("-usejavacp " + options)
-    val g = new Global(settings, reporter)
+    val g = new Global(settings, reporter) {
+      def addToPhasesSet1(comp: SubComponent, desc: String) = addToPhasesSet(comp, desc)
+    }
+    for ((comp, desc) <- extraPhases(g)) g.addToPhasesSet1(comp, desc)
     new g.Run
     g
   }
@@ -43,6 +46,21 @@ package object guide {
     new g.TyperRun
     g
   }
+  def newSubcomponent(g: Global, rightAfter: String, desc: String = "test")(f: ((g.type, g.CompilationUnit) => Unit)): (SubComponent, String) = {
+    import g._
+    val x = new SubComponent {
+      override def newPhase(prev: Phase): Phase = new g.GlobalPhase(prev) {
+        override def apply(unit: g.CompilationUnit): Unit = f(g, unit)
+        override def name: String = phaseName
+      }
+      override val global: Global = g
+      override val runsAfter: List[String] = rightAfter :: Nil
+      override val phaseName: String = desc
+      override val runsRightAfter: Option[String] = Some(rightAfter)
+    }
+    (x, desc)
+  }
+
   def compile(code: String, global: Global = newGlobal()): CompileResult[global.type] = {
     val run = new global.Run
     global.reporter.reset()
