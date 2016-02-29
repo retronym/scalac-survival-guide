@@ -11,6 +11,7 @@ object InlineMacro {
     val Option_map = definitions.OptionClass.info.decl(TermName("map"))
     val Option_getOrElse = definitions.OptionClass.info.decl(TermName("getOrElse"))
     val Option_isDefined = definitions.OptionClass.info.decl(TermName("isDefined"))
+    val Option_exists = definitions.OptionClass.info.decl(TermName("exists"))
     val Option_get = definitions.OptionClass.info.decl(TermName("get"))
     val Some_apply = definitions.SomeModule.info.decl(TermName("apply"))
     val UncheckedBoundsClass = {
@@ -44,11 +45,12 @@ object InlineMacro {
             val syntheticPos = tree.pos.focus
 
             val optionTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("qual"), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(tree.tpe))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("qual"), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(qual.tpe))
               internal.setType(setPos(valDef(temp, changeOwner(qual, api.currentOwner, temp)), sel.pos.makeTransparent), NoType)
             }
+            val elemType = Option_get.typeSignatureIn(qual.tpe).resultType
             val optionGetTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("x1"), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(param.symbol.info))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("x1"), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
               internal.setType(valDef(temp, api.typecheck(Select(gen.mkAttributedStableRef(optionTemp.symbol), Option_get))), NoType)
             }
             val mapGet = setPos(internal.setType(Block(optionGetTemp :: Nil, substituteSymbols(changeOwner(body, fun.symbol, api.currentOwner), param.symbol :: Nil, optionGetTemp.symbol :: Nil)), tree.tpe), syntheticRangePos)
@@ -59,6 +61,28 @@ object InlineMacro {
                 atPos(syntheticPos)(gen.mkAttributedIdent(definitions.NoneModule)))), tree.tpe)), syntheticRangePos)
 //             println(show(tree, printPositions = true))
 //             println(show(result, printPositions = true))
+            result
+          case Apply(sel @ Select(qual, _), (fun @ Function(param :: Nil, body)) :: Nil) if sel.symbol == Option_exists =>
+            val syntheticRangePos = tree.pos.makeTransparent
+            val syntheticPos = tree.pos.focus
+
+            val optionTemp: Tree = {
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("qual"), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(qual.tpe))
+              internal.setType(setPos(valDef(temp, changeOwner(qual, api.currentOwner, temp)), sel.pos.makeTransparent), NoType)
+            }
+            val elemType = Option_get.typeSignatureIn(qual.tpe).resultType
+            val optionGetTemp: Tree = {
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("x1"), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
+              internal.setType(valDef(temp, api.typecheck(Select(gen.mkAttributedStableRef(optionTemp.symbol), Option_get))), NoType)
+            }
+            val mapGet = setPos(internal.setType(Block(optionGetTemp :: Nil, substituteSymbols(changeOwner(body, fun.symbol, api.currentOwner), param.symbol :: Nil, optionGetTemp.symbol :: Nil)), definitions.BooleanTpe), syntheticRangePos)
+            val result = setPos(treeCopy.Block(tree,
+              optionTemp :: Nil,
+              internal.setType(atPos(syntheticRangePos)(If(atPos(syntheticPos)(gen.mkAttributedSelect(gen.mkAttributedStableRef(optionTemp.symbol), Option_isDefined)),
+                mapGet,
+                api.typecheck(atPos(syntheticPos)(Literal(Constant(false)))))), tree.tpe)), syntheticRangePos)
+             println(show(tree, printPositions = true))
+             println(show(result, printPositions = true))
             result
           case Apply(TypeApply(sel @ Select(qual, _), _), body :: Nil) if sel.symbol == Option_getOrElse =>
             val syntheticRangePos = tree.pos.makeTransparent
@@ -106,6 +130,9 @@ object _16_FunctionInline extends App {
       |     assert(foo(None) == None)
       |     assert(bar(Some("z")) == "z")
       |     assert(bar(None) == 0)
+      |     assert(inline(Some("x").exists(_ == "x")))
+      |     assert(!inline(Some("x").exists(_ == "y")))
+      |     assert(!inline(None.exists(_ == true)))
       |   }
       | }""".stripMargin, g).assertNoErrors()
 
