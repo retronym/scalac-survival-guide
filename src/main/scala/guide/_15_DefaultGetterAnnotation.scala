@@ -14,7 +14,7 @@ object _15_DefaultGetterAnnotation extends App {
         case dd: DefDef if dd.symbol.isDefaultGetter =>
           // find the corresponding method that declared the default
           val methName = nme.defaultGetterToMethod(dd.name)
-          val meth = typer.context.owner.info.decl(methName).filter(alt => mexists(alt.paramss)(_.hasDefault))
+          val meth = typer.context.owner.info.decl(methName).filter(alt => {alt.initialize; mexists(alt.paramss)(_.hasDefault)})
 
           // Inspect annotations of its symbol
           if (meth.hasAnnotation(definitions.DeprecatedAttr))
