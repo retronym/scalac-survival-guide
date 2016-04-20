@@ -7,15 +7,17 @@ import scala.tools.nsc.transform.TypingTransformers
 object _20_RelatedMethodAdder extends App {
   val g = newGlobal("-usejavacp -Xprint:typer -Ystop-after:typer -uniqid -Xprint-types")
   import g._
-//  val code = "class C { def foo[T](a: String, t: T): T = {a.reverse; t; ???} }"
-
    val code = "class C { def foo[T](a: String, t: T): T = {a.reverse; t}}"
-  // ^-- fails, probably related to method type param skolems could just add some casts.
 
   val result = compile(code, g).assertNoErrors()
   val tree = result.tree
   val unit = result.unit
 
+  // transform the above into:
+  //
+  // "class C { def foo[T](a: String, t: T): T = foo$impl(0, a, t); def foo$impl(x$1: Int, a: String, t: T): T = {x$1; { a.reverse; t } } }"
+  //
+  // a hopefully instructive example for @wheaties: https://gitter.im/scala/scala?at=57158a655cd40114649c745d
 
   object typingTransform extends TypingTransformers {
     override val global: g.type = g
