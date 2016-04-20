@@ -69,13 +69,14 @@ package object guide {
     global.reporter.reset()
     val source = global.newSourceFile(code)
     run.compileSources(source :: Nil)
-    val tree = run.units.toList.head.body
+    val unit = run.units.toList.head
+    val tree = unit.body
     val infos = global.reporter match {
       case sr: StoreReporter => sr.infos
       case _ => Nil
     }
     new global.Run
-    new CompileResult[global.type](global, global.reporter.hasErrors, tree, infos.toList)
+    new CompileResult[global.type](global, global.reporter.hasErrors, unit, tree, infos.toList)
   }
 
   def lookupIdent(g: Global)(name: g.Name): g.Symbol = {
@@ -85,7 +86,7 @@ package object guide {
     lookup.symbol
   }
 
-  case class CompileResult[G <: Global](global: G, error: Boolean, tree: G#Tree, infos: List[StoreReporter#Info]) {
+  case class CompileResult[G <: Global](global: G, error: Boolean, unit: G#CompilationUnit, tree: G#Tree, infos: List[StoreReporter#Info]) {
     def assertNoErrors(): this.type = {assert(!error, infos.toList); this}
     def classLoader: ClassLoader = {
       val classPathURLs = PathResolverFactory.create(global.settings).resultAsURLs
