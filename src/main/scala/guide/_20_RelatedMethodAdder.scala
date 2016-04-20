@@ -37,10 +37,11 @@ object _20_RelatedMethodAdder extends App {
         val newParam = newMethod.newSyntheticValueParam(definitions.IntTpe, synthParamName)
 
         // and modify the method's info to include this parameter
-        newMethod.modifyInfo {
+        val newMethodInfo = newMethod.info match {
           case GenPolyType(tparams, MethodType(params, res)) => GenPolyType(tparams, MethodType(newParam :: params, res))
           case _ => ???
         }
+        newMethod.setInfoAndEnter(newMethodInfo)
 
         // modify the RHS of the source method to forward to the synthetic one
         // we need to use `paramToArg` to make sure that vararg params are passed along with `p : _*`
