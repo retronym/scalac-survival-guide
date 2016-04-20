@@ -1,17 +1,18 @@
 package guide
 
 import language.experimental._
+import scala.collection.mutable
 import scala.tools.nsc.transform.TypingTransformers
 
 object _20_RelatedMethodAdder extends App {
   val g = newGlobal("-usejavacp -Xprint:typer -Ystop-after:typer -uniqid -Xprint-types")
   import g._
-  val code = "class C { def foo[T](a: String, t: T): T = {a.reverse; t; ???} }"
+//  val code = "class C { def foo[T](a: String, t: T): T = {a.reverse; t; ???} }"
 
-  // val code = "class C { def foo[T](a: String, t: T): T = {a.reverse; t; ???} }"
+   val code = "class C { def foo[T](a: String, t: T): T = {a.reverse; t}}"
   // ^-- fails, probably related to method type param skolems could just add some casts.
 
-  val result = compile("class C { def foo[T](a: String, t: T): T = {a.reverse; t; ???} }", g).assertNoErrors()
+  val result = compile(code, g).assertNoErrors()
   val tree = result.tree
   val unit = result.unit
 
@@ -48,17 +49,41 @@ object _20_RelatedMethodAdder extends App {
         val params1: List[Tree] = localTyper.typed(Literal(Constant(0))) :: vparams.map(p => gen.paramToArg(p.symbol))
         val forwarderTree = (Apply(gen.mkAttributedRef(tree.symbol.owner.thisType, newMethod), params1) /: vparamss)((fn, vparams) => Apply(fn, vparams map gen.paramToArg))
         val forwarder = deriveDefDef(tree)(_ => localTyper.typedPos(tree.symbol.pos)(forwarderTree))
+        val origTparams = tree.symbol.info.typeParams
 
+        // References to method type parameters in the RHS will refer to method type param skolems, rather
+        // than directly to the method type parameter. Find these to prepare to substitute them with references
+        // the the type params of the synthetic method
+        val (oldSkolems, deskolemized) = {
+          origTparams match {
+            case Nil => (Nil, Nil)
+            case _ =>
+              val skolemSubst = mutable.Map[Symbol, Symbol]()
+              rhs.foreach(_.tpe.foreach {
+                case tp if tp.typeSymbolDirect.isSkolem =>
+                  val tparam = tp.typeSymbolDirect.deSkolemize
+                  if (!skolemSubst.contains(tparam) && origTparams.contains(tparam)) {
+                    skolemSubst(tp.typeSymbolDirect) = newMethod.typeParams(origTparams.indexOf(tparam))
+                  }
+                case _ =>
+              })
+              skolemSubst.toList.unzip
+          }
+        }
+
+        val old = oldSkolems ::: tree.symbol.typeParams ::: allvparams.flatMap(_.map(_.symbol))
+        val neww = deskolemized ::: newMethod.typeParams ::: newMethod.info.paramss.flatten.drop(1)
+
+        val newRhs = super.transform(rhs)
+          .changeOwner((tree.symbol, newMethod))
+          .substituteSymbols(old, neww)
         // create the tree for our synthetic method, based on the symbol we constructed above.
         // we take the RHS of the source method and substitute in the new method as the owner
         // of any symbols within the RHS that used to be owned by the source method.
         // similarly, we substitute references to the value/type parameters of the source method
         // with the corresponding params of the synthetic method
         val newMethodTree: Tree =
-          localTyper.typedPos(tree.symbol.pos)(DefDef(newMethod, Block(Ident(synthParamName),
-            super.transform(rhs)
-              .changeOwner((tree.symbol, newMethod))
-              .substituteSymbols(tree.symbol.typeParams ::: allvparams.flatMap(_.map(_.symbol)), newMethod.typeParams ::: newMethod.info.paramss.flatten.drop(1)))))
+          localTyper.typedPos(tree.symbol.pos)(DefDef(newMethod, Block(Ident(synthParamName), newRhs)))
 
         // "thicket encoding", will be flattened into the template body be the other case of this transform.
         Block(newMethodTree :: forwarder :: Nil, EmptyTree)
