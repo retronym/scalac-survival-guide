@@ -96,3 +96,6 @@ object _20_RelatedMethodAdder extends App {
   println(showCode(tree1))
 }
 
+object Test {
+
+}
