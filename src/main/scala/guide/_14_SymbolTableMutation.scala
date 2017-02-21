@@ -1,7 +1,5 @@
 package guide
 
-import com.sun.tools.javac.code
-
 import scala.reflect.internal.Flags
 import scala.tools.nsc.{Phase, SubComponent, Global}
 

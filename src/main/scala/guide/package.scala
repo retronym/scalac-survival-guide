@@ -1,6 +1,7 @@
 import scala.annotation.elidable
 import scala.reflect.internal.util.ScalaClassLoader
-import scala.tools.nsc.{Phase, SubComponent, Global, Settings}
+import scala.reflect.io.File
+import scala.tools.nsc.{Global, Phase, Settings, SubComponent}
 import scala.tools.nsc.reporters.StoreReporter
 import scala.tools.reflect.ReflectMain._
 import scala.tools.util.PathResolverFactory
@@ -89,7 +90,10 @@ package object guide {
   case class CompileResult[G <: Global](global: G, error: Boolean, unit: G#CompilationUnit, tree: G#Tree, infos: List[StoreReporter#Info]) {
     def assertNoErrors(): this.type = {assert(!error, infos.toList); this}
     def classLoader: ClassLoader = {
-      val classPathURLs = PathResolverFactory.create(global.settings).resultAsURLs
+      val s = new Settings()
+      s.classpath.value = global.settings.classpath.value
+      s.classpath.value = s.classpath.value + File.pathSeparator + s.outputDirs.getSingleOutput.get.path
+      val classPathURLs = new Global(s).classPath.asURLs
       ScalaClassLoader.fromURLs(classPathURLs, getClass.getClassLoader)
     }
   }

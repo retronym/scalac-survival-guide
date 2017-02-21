@@ -1,14 +1,15 @@
 package guide
 
 import scala.tools.nsc.transform.{InfoTransform, TypingTransformers}
-import scala.tools.nsc.{Global, SubComponent}
+import scala.tools.nsc.Global
 
 object _22_InfoTransform extends App {
 
   def mkPhase(g: Global) = new AddClassName { val global: g.type = g }
 
-  val g1 = newGlobal("-Xprint:all", extraPhases = g2 => (mkPhase(g2), "addClassName") :: Nil)
+  val g1 = newGlobal("-Xprint:addClassName", extraPhases = g2 => (mkPhase(g2), "addClassName") :: Nil)
   compile("class C; class D extends C; class E extends D", g1)
+  compile("class D extends C; class E extends D; class C", g1)
 }
 
 abstract class AddClassName extends InfoTransform with TypingTransformers {
