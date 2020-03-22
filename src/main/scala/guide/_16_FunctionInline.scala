@@ -20,7 +20,7 @@ object InlineMacro {
     }
     def uncheckedBounds(tp: Type): Type = {
       if ((tp.typeArgs.isEmpty && (tp match { case _: TypeRef => true; case _ => false}))|| UncheckedBoundsClass == NoSymbol) tp
-      else withAnnotation(tp, Annotation(UncheckedBoundsClass.asType.toType, Nil, ListMap()))
+      else withAnnotation(tp, Annotation(q"new ${UncheckedBoundsClass.asType.toType}"))
     }
     def withAnnotation(tp: Type, ann: Annotation): Type = withAnnotations(tp, List(ann))
 
@@ -45,12 +45,12 @@ object InlineMacro {
             val syntheticPos = tree.pos.focus
 
             val optionTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("qual"), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(qual.tpe))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName(TermName("qual")), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(qual.tpe))
               internal.setType(setPos(valDef(temp, changeOwner(qual, api.currentOwner, temp)), sel.pos.makeTransparent), NoType)
             }
             val elemType = Option_get.typeSignatureIn(qual.tpe).resultType
             val optionGetTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("x1"), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName(TermName("x1")), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
               internal.setType(valDef(temp, api.typecheck(Select(gen.mkAttributedStableRef(optionTemp.symbol), Option_get))), NoType)
             }
             val mapGet = setPos(internal.setType(Block(optionGetTemp :: Nil, substituteSymbols(changeOwner(body, fun.symbol, api.currentOwner), param.symbol :: Nil, optionGetTemp.symbol :: Nil)), tree.tpe), syntheticRangePos)
@@ -67,12 +67,12 @@ object InlineMacro {
             val syntheticPos = tree.pos.focus
 
             val optionTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("qual"), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(qual.tpe))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName(TermName("qual")), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(qual.tpe))
               internal.setType(setPos(valDef(temp, changeOwner(qual, api.currentOwner, temp)), sel.pos.makeTransparent), NoType)
             }
             val elemType = Option_get.typeSignatureIn(qual.tpe).resultType
             val optionGetTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("x1"), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName(TermName("x1")), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
               internal.setType(valDef(temp, api.typecheck(Select(gen.mkAttributedStableRef(optionTemp.symbol), Option_get))), NoType)
             }
             val mapGet = setPos(internal.setType(Block(optionGetTemp :: Nil, substituteSymbols(changeOwner(body, fun.symbol, api.currentOwner), param.symbol :: Nil, optionGetTemp.symbol :: Nil)), definitions.BooleanTpe), syntheticRangePos)
@@ -89,12 +89,12 @@ object InlineMacro {
             val syntheticPos = tree.pos.focus
 
             val optionTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("qual"), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(tree.tpe))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName(TermName("qual")), sel.pos.focus, Flag.SYNTHETIC), uncheckedBounds(tree.tpe))
               internal.setType(setPos(valDef(temp, changeOwner(qual, api.currentOwner, temp)), sel.pos.makeTransparent), NoType)
             }
             val elemType = Option_get.typeSignatureIn(qual.tpe).resultType
             val optionGetTemp: Tree = {
-              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName("x1"), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
+              val temp = internal.setInfo(internal.newTermSymbol(api.currentOwner, c.freshName(TermName("x1")), syntheticRangePos, Flag.SYNTHETIC), uncheckedBounds(elemType))
               internal.setType(valDef(temp, api.typecheck(Select(gen.mkAttributedStableRef(optionTemp.symbol), Option_get))), NoType)
             }
             val mapGet = setPos(internal.setType(Block(optionGetTemp :: Nil, gen.mkAttributedIdent(optionGetTemp.symbol)), tree.tpe), syntheticRangePos)

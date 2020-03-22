@@ -30,6 +30,6 @@ object _02_HelloWorld extends App {
 
   toolbox.eval(tree)
 
-  () => _03_Trees
+  def next = _03_Trees
 }
 

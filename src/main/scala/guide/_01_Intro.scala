@@ -9,5 +9,5 @@ object _01_Intro extends App {
 
   p(":power up and have fun!")
 
-  () => _02_HelloWorld
+  def next = _02_HelloWorld
 }

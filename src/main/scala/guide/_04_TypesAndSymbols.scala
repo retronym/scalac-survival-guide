@@ -43,5 +43,5 @@ object _04_TypesAndSymbols extends App {
   symbols
   types
 
-  () => _05_Unshrouding
+  def next = _05_Unshrouding
 }

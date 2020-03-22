@@ -25,5 +25,5 @@ object _05_Unshrouding extends App {
 
   p(show(toolbox.typecheck(tree)))
 
-  () => _06_Unshrouding
+  def next = _06_Unshrouding
 }

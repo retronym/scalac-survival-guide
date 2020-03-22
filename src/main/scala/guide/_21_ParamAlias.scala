@@ -18,7 +18,7 @@ object _21_ParamAlias extends App {
                 super.transform(vd)
               } else {
                 val newMethodTree = {
-                  val sym = currentOwner.newMethodSymbol(vd.name.dropLocal + "$extraMethod", vd.symbol.pos, Flag.SYNTHETIC | Flag.STABLE).setInfo(NullaryMethodType(vd.symbol.info))
+                  val sym = currentOwner.newMethodSymbol(TermName(s"${vd.name.dropLocal}$$extraMethod"), vd.symbol.pos, Flag.SYNTHETIC | Flag.STABLE).setInfo(NullaryMethodType(vd.symbol.info))
                   DefDef(sym, gen.mkAttributedRef(vd.symbol))
                 }
                 Block(super.transform(vd) :: localTyper.typedPos(vd.pos)(newMethodTree) :: Nil, EmptyTree)

@@ -4,7 +4,6 @@ import scala.reflect.io.File
 import scala.tools.nsc.{Global, Phase, Settings, SubComponent}
 import scala.tools.nsc.reporters.StoreReporter
 import scala.tools.reflect.ReflectMain._
-import scala.tools.util.PathResolverFactory
 
 package object guide {
   val Width = 80
@@ -17,7 +16,7 @@ package object guide {
     val diff = Width - s.length - 1
     val l = diff / 2
     val r = diff - l
-    "\n" + ("=" * l) + " " + s + " " + ("=" * r) + "\n"
+    "\n" + (filler.toString * l) + " " + s + " " + (filler.toString * r) + "\n"
   }
 
   var lastWasComment = false
@@ -30,9 +29,9 @@ package object guide {
   }
 
   def newGlobal(options: String = "", extraPhases: Global => List[(SubComponent, String)] = _ => Nil): Global = {
-    val reporter = new StoreReporter
     val settings = new Settings()
     settings.processArgumentString("-usejavacp " + options)
+    val reporter = new StoreReporter(settings)
     val g = new Global(settings, reporter) {
       def addToPhasesSet1(comp: SubComponent, desc: String) = addToPhasesSet(comp, desc)
     }
@@ -41,9 +40,9 @@ package object guide {
     g
   }
   def newInteractiveGlobal(options: String = ""): scala.tools.nsc.interactive.Global = {
-    val reporter = new StoreReporter
     val settings = new Settings()
     settings.processArgumentString("-usejavacp " + options)
+    val reporter = new StoreReporter(settings)
     val g = new scala.tools.nsc.interactive.Global(settings, reporter) {
       override def assertCorrectThread(): Unit = ()
     }
@@ -87,8 +86,8 @@ package object guide {
     lookup.symbol
   }
 
-  case class CompileResult[G <: Global](global: G, error: Boolean, unit: G#CompilationUnit, tree: G#Tree, infos: List[StoreReporter#Info]) {
-    def assertNoErrors(): this.type = {assert(!error, infos.toList); this}
+  case class CompileResult[G <: Global](global: G, error: Boolean, unit: G#CompilationUnit, tree: G#Tree, infos: List[StoreReporter.Info]) {
+    def assertNoErrors(): this.type = {assert(!error, infos); this}
     def classLoader: ClassLoader = {
       val s = new Settings()
       s.classpath.value = global.settings.classpath.value
