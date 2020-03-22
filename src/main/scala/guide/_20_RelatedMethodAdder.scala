@@ -49,7 +49,7 @@ object _20_RelatedMethodAdder extends App {
         // modify the RHS of the source method to forward to the synthetic one
         // we need to use `paramToArg` to make sure that vararg params are passed along with `p : _*`
         val params1: List[Tree] = localTyper.typed(Literal(Constant(0))) :: vparams.map(p => gen.paramToArg(p.symbol))
-        val forwarderTree = (Apply(gen.mkAttributedRef(tree.symbol.owner.thisType, newMethod), params1) /: vparamss)((fn, vparams) => Apply(fn, vparams map gen.paramToArg))
+        val forwarderTree = vparamss.foldLeft(Apply(gen.mkAttributedRef(tree.symbol.owner.thisType, newMethod), params1))((fn, vparams) => Apply(fn, vparams map gen.paramToArg))
         val forwarder = deriveDefDef(tree)(_ => localTyper.typedPos(tree.symbol.pos)(forwarderTree))
         val origTparams = tree.symbol.info.typeParams
 

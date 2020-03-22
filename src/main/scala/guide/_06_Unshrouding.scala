@@ -11,16 +11,16 @@ object _06_Unshrouding extends App {
 
 
   p("// Let's start a fully fledged compiler (rather than the toolbox compiler we used earlier)")
-  val reporter = new StoreReporter
   val settings = new Settings()
   p("// Meaning: Use the classpath of the JVM as the classpath of the compiler, print the AST after the parser and typer phase\n, trace the internal operation of the typechecker, log macro expansions")
   settings.processArgumentString("-usejavacp -Xprint:parser,typer -Ytyper-debug -Ymacro-debug-lite")
+  val reporter = new StoreReporter(settings)
   val global = new Global(settings, reporter)
   import global._
   val run = new Run
   val source = newSourceFile( """class Wrap { import scala.reflect.runtime.universe._; def test(t: Tree) = q"println($t)" }""")
   run.compileSources(source :: Nil)
-  assert(reporter.infos.isEmpty)
+  assert(reporter.infos.isEmpty, "No errors or warnings expected")
 
   ---------------
   p(
@@ -47,5 +47,5 @@ object _06_Unshrouding extends App {
       | - parser, typer, and erasure are just some of the phases you'll find in `scalac -Xprint-phases`.
     """.stripMargin)
 
-  () => _07_Typer
+  def next = _07_Typer
 }

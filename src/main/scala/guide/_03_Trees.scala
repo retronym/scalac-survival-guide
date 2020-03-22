@@ -45,6 +45,6 @@ object _03_Trees extends App {
   p("// For more control over the recursion, use a Traverser")
   p("// ... and, to generate a new tree, use a Transformer")
 
-  () => _04_TypesAndSymbols
+  def next = _04_TypesAndSymbols
 }
 

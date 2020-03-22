@@ -5,7 +5,7 @@ import scala.util.matching.Regex
 
 object _19_ScalaSig extends App {
   private val ModuleClassName: Regex = """(.*)\$""".r
-  private val ImplClassName: Regex = """(.*)\$class""".r
+  private val LambdaClassName: Regex = """(.*?)\$?\$\$Lambda.*""".r
   def isScala(cls: Class[_]) = {
     import scala.reflect.{ScalaSignature, ScalaLongSignature}
     def hasAnn(cls: Class[_]): Boolean = {
@@ -25,8 +25,8 @@ object _19_ScalaSig extends App {
         cls.getName match {
           case ModuleClassName(companionClassName) =>
             classForName(companionClassName, init = false, cls.getClassLoader).getOrElse(cls)
-          case ImplClassName(interfaceName) =>
-            classForName(interfaceName, init = false, cls.getClassLoader).getOrElse(cls)
+          case LambdaClassName(lambdaName) =>
+            classForName(lambdaName, init = false, cls.getClassLoader).getOrElse(cls)
           case _ => cls
         }
       }
@@ -54,9 +54,6 @@ object _19_ScalaSig extends App {
   check(O.localAnon)
   check(O.localNamed)
   check(O.lambda)
-
-  assert(isScala(new T {}.traitImplClass))
-
 }
 
 class C {
@@ -76,7 +73,4 @@ object O {
   def localAnon = new Object {}
   def localNamed = {object Local; Local}
   def lambda = {() => 42}
-}
-trait T {
-  def traitImplClass: Class[_] = sun.reflect.Reflection.getCallerClass(1)
 }
